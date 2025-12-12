@@ -1,35 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import Login from "./Login";
+import ProductPage from "./ProductPage";
+import { jwtDecode } from "jwt-decode";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [token, setToken] = useState(localStorage.getItem("token"));
 
+  // Hàm xử lý Đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // 1. Xóa token khỏi bộ nhớ
+    setToken(null);                   // 2. Reset state để App render lại về màn hình Login
+  };
+
+  // Logic kiểm tra token
+  if (!token || token === "undefined" || token === "null") {
+    return <Login onLogin={() => setToken(localStorage.getItem("token"))} />;
+  }
+
+  // Decode token an toàn
+  let role = [];
+  let permissions = [];
+  
+  try {
+    const decoded = jwtDecode(token);
+    role = decoded.roles || [];
+    permissions = decoded.permissions || [];
+  } catch (e) {
+    // Nếu token lỗi thì logout luôn
+    handleLogout();
+    return null; 
+  }
+
+  // 🟢 TRUYỀN HÀM handleLogout XUỐNG PRODUCTPAGE
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more Hello 123
-      </p>
-    </>
-  )
+    <ProductPage 
+      role={role} 
+      permissions={permissions} 
+      onLogout={handleLogout} 
+    />
+  );
 }
 
-export default App
+export default App;
